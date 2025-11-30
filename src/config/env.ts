@@ -11,12 +11,12 @@ interface EnvVars {
   DB_PORT: number;
   DB_USERNAME: string;
 
-  // NATS_HOST: string;
-  // NATS_PORT: number;
+  NATS_HOST: string;
+  NATS_PORT: number;
 
-  // KAFKA_GROUP_ID: string;
-  // KAFKA_HOST: string;
-  // KAFKA_PORT: number;
+  KAFKA_GROUP_ID: string;
+  KAFKA_HOST: string;
+  KAFKA_PORT: number;
 }
 
 const envsSchema = joi.object({
@@ -29,12 +29,12 @@ const envsSchema = joi.object({
   DB_PORT: joi.number().required(),
   DB_USERNAME: joi.string().required(),
 
-  // NATS_HOST: joi.string().required(),
-  // NATS_PORT: joi.number().required(),
+  NATS_HOST: joi.string().required(),
+  NATS_PORT: joi.number().required(),
 
-  // KAFKA_GROUP_ID: joi.string().required(),
-  // KAFKA_HOST: joi.string().required(),
-  // KAFKA_PORT: joi.number().required(),
+  KAFKA_GROUP_ID: joi.string().required(),
+  KAFKA_HOST: joi.string().required(),
+  KAFKA_PORT: joi.number().required(),
 })
 .unknown(true);
 
@@ -48,18 +48,18 @@ if ( error ) {
 const envVars:EnvVars = value;
 
 export const envs = {
-  state: envVars.STATE,
-  port: envVars.PORT,
+  STATE: envVars.STATE,
+  PORT: envVars.PORT,
 
-  dbPassword: envVars.DB_PASSWORD,
-  dbName: envVars.DB_NAME,
-  dbHost: envVars.DB_HOST,
-  dbPort: envVars.DB_PORT,
-  dbUsername: envVars.DB_USERNAME,
+  DB_PASSWORD: envVars.DB_PASSWORD,
+  DB_NAME: envVars.DB_NAME,
+  DB_HOST: envVars.DB_HOST,
+  DB_PORT: envVars.DB_PORT,
+  DB_USERNAME: envVars.DB_USERNAME,
 
-  // natsHost: envVars.NATS_HOST,
-  // natsPort: envVars.NATS_PORT,
-  // kafkaHost: envVars.KAFKA_HOST,
-  // kafkaGroupId: envVars.KAFKA_GROUP_ID,
-  // kafkaPort: envVars.KAFKA_PORT,
+  NATS_HOST: envVars.NATS_HOST,
+  NATS_PORT: envVars.NATS_PORT,
+  KAFKA_HOST: envVars.KAFKA_HOST,
+  KAFKA_GROUP_ID: envVars.KAFKA_GROUP_ID,
+  KAFKA_PORT: envVars.KAFKA_PORT,
 }
