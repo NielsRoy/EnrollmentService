@@ -142,10 +142,20 @@ async function validateScheduleConflicts(subjectGroupIds: number[]): Promise<{ v
 
     const schedules = await groupScheduleRepo
         .createQueryBuilder('gs')
-        .innerJoinAndSelect('gs.schedule', 'schedule')
-        .innerJoinAndSelect('gs.subjectGroup', 'sg')
+        .innerJoin('gs.schedule', 'schedule')
+        .innerJoin('gs.subjectGroup', 'sg')
+        .innerJoin('plan_subject', 'ps', 'ps.id = sg."planSubjectId"')
+        .innerJoin('subject', 's', 's.id = ps."subjectId"')
         .where('gs.subjectGroup.id IN (:...ids)', { ids: subjectGroupIds })
-        .getMany();
+        .select([
+            'gs.day AS day',
+            'schedule.beginTime AS "beginTime"',
+            'schedule.endTime AS "endTime"',
+            'sg.id AS "groupId"',
+            'sg.group AS "groupName"',
+            's.code AS "subjectCode"'
+        ])
+        .getRawMany();
 
     // Agrupar por día
     const byDay = new Map<string, Array<{
@@ -153,6 +163,7 @@ async function validateScheduleConflicts(subjectGroupIds: number[]): Promise<{ v
         endTime: string;
         groupId: number;
         groupName: string;
+        subjectCode: string;
     }>>();
 
     for (const gs of schedules) {
@@ -160,10 +171,11 @@ async function validateScheduleConflicts(subjectGroupIds: number[]): Promise<{ v
             byDay.set(gs.day, []);
         }
         byDay.get(gs.day)!.push({
-            beginTime: gs.schedule.beginTime,
-            endTime: gs.schedule.endTime,
-            groupId: gs.subjectGroup.id,
-            groupName: gs.subjectGroup.group
+            beginTime: gs.beginTime,
+            endTime: gs.endTime,
+            groupId: gs.groupId,
+            groupName: gs.groupName,
+            subjectCode: gs.subjectCode
         });
     }
 
@@ -210,6 +222,7 @@ function findTimeConflict(times: Array<{
     endTime: string;
     groupId: number;
     groupName: string;
+    subjectCode: string;
 }>): { message: string } | null {
     for (let i = 0; i < times.length; i++) {
         for (let j = i + 1; j < times.length; j++) {
@@ -223,7 +236,7 @@ function findTimeConflict(times: Array<{
 
             if (aStart < bEnd && bStart < aEnd) {
                 return {
-                    message: `Grupo ${a.groupName} (${a.beginTime}-${a.endTime}) choca con Grupo ${b.groupName} (${b.beginTime}-${b.endTime})`
+                    message: `${a.subjectCode} - Grupo ${a.groupName} (${a.beginTime}-${a.endTime}) choca con ${b.subjectCode} - Grupo ${b.groupName} (${b.beginTime}-${b.endTime})`
                 };
             }
         }
