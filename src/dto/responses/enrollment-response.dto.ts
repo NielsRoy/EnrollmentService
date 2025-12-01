@@ -14,7 +14,8 @@ export class SubjectGroupInfoDto {
     group: string;
 
 
-    teacher: string;
+
+
 }
 
 export class EnrollmentResponseDto {
@@ -31,7 +32,9 @@ export class EnrollmentResponseDto {
     processedAt?: Date | null;
 
 
-    periodId: number;
+    period: number;
+
+    year: number;
 
 
     studentId: number;

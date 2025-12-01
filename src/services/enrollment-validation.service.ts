@@ -61,18 +61,20 @@ export class EnrollmentValidationService {
         // Obtener todos los horarios de los grupos seleccionados
         const schedules = await this.groupScheduleRepository
             .createQueryBuilder('gs')
-            .innerJoinAndSelect('gs.schedule', 'schedule')
-            .innerJoinAndSelect('gs.subjectGroup', 'sg')
+            .innerJoin('gs.schedule', 'schedule')
+            .innerJoin('gs.subjectGroup', 'sg')
+            .innerJoin('plan_subject', 'ps', 'ps.id = sg."planSubjectId"')
+            .innerJoin('subject', 's', 's.id = ps."subjectId"')
             .where('gs.subjectGroup.id IN (:...ids)', { ids: subjectGroupIds })
             .select([
-                'gs.id',
-                'gs.day',
-                'schedule.beginTime',
-                'schedule.endTime',
-                'sg.id',
-                'sg.group'
+                'gs.day AS day',
+                'schedule.beginTime AS "beginTime"',
+                'schedule.endTime AS "endTime"',
+                'sg.id AS "groupId"',
+                'sg.group AS "groupName"',
+                's.code AS "subjectCode"'
             ])
-            .getMany();
+            .getRawMany();
 
         // Agrupar por día
         const byDay = new Map<string, Array<{
@@ -80,6 +82,7 @@ export class EnrollmentValidationService {
             endTime: string;
             groupId: number;
             groupName: string;
+            subjectCode: string;
         }>>();
 
         for (const gs of schedules) {
@@ -87,10 +90,11 @@ export class EnrollmentValidationService {
                 byDay.set(gs.day, []);
             }
             byDay.get(gs.day)!.push({
-                beginTime: gs.schedule.beginTime,
-                endTime: gs.schedule.endTime,
-                groupId: gs.subjectGroup.id,
-                groupName: gs.subjectGroup.group
+                beginTime: gs.beginTime,
+                endTime: gs.endTime,
+                groupId: gs.groupId,
+                groupName: gs.groupName,
+                subjectCode: gs.subjectCode
             });
         }
 
@@ -122,14 +126,16 @@ export class EnrollmentValidationService {
             where: {
                 studentId,
                 period: { id: periodId },
-                status: EnrollmentStatus.CONFIRMED
-            }
+                status: In([EnrollmentStatus.CONFIRMED, EnrollmentStatus.PENDING])
+            },
+            relations: ['period', 'period.term']
         });
 
         if (existingEnrollment) {
+            const statusMsg = existingEnrollment.status === EnrollmentStatus.PENDING ? 'pendiente' : 'confirmada';
             return {
                 valid: false,
-                reason: `Ya existe una inscripción confirmada para este período (ID: ${existingEnrollment.id})`
+                reason: `Ya existe una inscripción ${statusMsg} para el período: '${existingEnrollment.period.number}-${existingEnrollment.period.term.year}'`
             };
         }
 
@@ -146,6 +152,7 @@ export class EnrollmentValidationService {
         endTime: string;
         groupId: number;
         groupName: string;
+        subjectCode: string;
     }>): { message: string } | null {
         for (let i = 0; i < times.length; i++) {
             for (let j = i + 1; j < times.length; j++) {
@@ -161,7 +168,7 @@ export class EnrollmentValidationService {
                 // Hay conflicto si se solapan
                 if (aStart < bEnd && bStart < aEnd) {
                     return {
-                        message: `Grupo ${a.groupName} (${a.beginTime}-${a.endTime}) choca con Grupo ${b.groupName} (${b.beginTime}-${b.endTime})`
+                        message: `${a.subjectCode} - Grupo ${a.groupName} (${a.beginTime}-${a.endTime}) choca con ${b.subjectCode} - Grupo ${b.groupName} (${b.beginTime}-${b.endTime})`
                     };
                 }
             }

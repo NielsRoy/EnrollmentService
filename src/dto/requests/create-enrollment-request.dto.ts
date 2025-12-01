@@ -6,9 +6,7 @@ export class CreateEnrollmentRequestDto {
     // @IsNotEmpty()
     studentId: number;
 
-    // @IsInt()
-    // @IsNotEmpty()
-    periodId: number;
+
 
 
     // @IsArray()
