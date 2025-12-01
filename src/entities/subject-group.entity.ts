@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, Unique, VersionColumn } from "typeorm";
 import { Teacher } from "./teacher.entity";
 
 @Entity()
@@ -24,4 +24,7 @@ export class SubjectGroup {
 
   @Column()
   planSubjectId: number;
+
+  @VersionColumn()
+  version: number;
 }

@@ -13,8 +13,12 @@ import { Schedule } from './entities/schedule.entity';
 import { SubjectGroup } from './entities/subject-group.entity';
 import { Teacher } from './entities/teacher.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { NATS_SERVICE } from './config/services';
+import { NATS_SERVICE, KAFKA_SERVICE } from './config/services';
 import { SubjectGroupService } from './services/subject-group.service';
+import { EnrollmentService } from './services/enrollment.service';
+import { EnrollmentValidationService } from './services/enrollment-validation.service';
+import { WorkerPoolService } from './services/worker-pool.service';
+import { KafkaConsumerController } from './controllers/kafka-consumer.controller';
 
 @Module({
   imports: [
@@ -53,18 +57,28 @@ import { SubjectGroupService } from './services/subject-group.service';
           servers: [`nats://${envs.NATS_HOST}:${envs.NATS_PORT}`],
         }
       },
-      // { 
-      //   name: KAFKA_SERVICE,
-      //   transport: Transport.KAFKA,
-      //   options: {
-      //     client: {
-      //       brokers: [`${envs.kafkaHost}:${envs.kafkaPort}`],
-      //     },
-      //   },
-      // },
+      {
+        name: KAFKA_SERVICE,
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'enrollment-service-producer',
+            brokers: ['localhost:9093'],
+          },
+          // Solo producer, sin consumer (el consumer está en main.ts)
+          producer: {
+            allowAutoTopicCreation: true,
+          },
+        },
+      },
     ]),
   ],
-  controllers: [AppController],
-  providers: [SubjectGroupService],
+  controllers: [AppController, KafkaConsumerController],
+  providers: [
+    SubjectGroupService,
+    EnrollmentService,
+    EnrollmentValidationService,
+    WorkerPoolService,
+  ],
 })
 export class AppModule { }
